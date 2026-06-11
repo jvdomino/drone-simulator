@@ -2,6 +2,9 @@
 node_modules/
 package-lock.json
 
+# Bootstrapped Node runtime (downloaded by app.sh)
+.node/
+
 # Build outputs
 dist/
 build/
