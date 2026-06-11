@@ -15,5 +15,5 @@ export PORT=8888
 # export ML_API_URL="https://<your-domino-host>/models/<model-id>/<version>/model"
 # export MODEL_API_TOKEN="<model-api-access-token>"
 
-npm ci
+npm install
 npm run dev -- --host 0.0.0.0 --port "$PORT" --strictPort
