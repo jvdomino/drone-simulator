@@ -129,26 +129,31 @@ frontend behind Domino's proxy. **No GPU** — rendering is client-side WebGL; u
 
 ---
 
-## ⚠️ Integration gaps to close before the demo is fully wired
+## Integration gaps — status
 
-The launch scaffolding routes `/api/*`, but three shape mismatches remain between the
-frontend's expectations and the Domino Model API contract:
+The frontend only calls three endpoints: `/api/wind-tunnel`, `/api/detect`, `/api/analyze`
+(`/api/wind-correct` is never called, so its proxy was removed). All three are now wired:
 
-1. **`/api/wind-tunnel` has no production backend.** `model_api.py` only implements
-   wind-*correction*. The pre-computed CFD flow fields must be served — either bundle the
-   `flow_fields/*.json` into the App's static assets (the README's "app serves stored flow
-   fields instantly" approach) or stand up a small endpoint like dev's
-   [model_server.py](packages/ml/model_server.py) `/wind-tunnel`.
+1. **`/api/wind-tunnel` — ✅ closed.** A Vite middleware
+   ([flowFieldServer.ts](packages/web/vite-plugins/flowFieldServer.ts)) serves the
+   pre-computed CFD flow fields straight from the App's filesystem, mirroring
+   [model_server.py](packages/ml/model_server.py)'s nearest-match lookup. Bundle the
+   `flow_fields/*.json` from Phase 1 into the App (default search paths: `FLOW_FIELDS_DIR`
+   env var → `packages/ml/flow_fields` → `packages/web/flow_fields`). With no local files it
+   falls through to the `ML_API_URL` proxy (dev fallback to `model_server.py:5051`).
 
-2. **Request envelope.** Domino Model APIs expect `{"data": {...}}` and return `{"result": ...}`.
-   The frontend's `fetch('/api/wind-correct', ...)` sends/expects raw shapes. The Vite proxy
-   currently only rewrites the path + adds a bearer header — it does **not** reshape bodies.
+2. **`/api/detect` + `/api/analyze` — ✅ closed by design.** Deploy the YOLO service as a
+   **sidecar App** (Phase 4). Its FastAPI `/detect` (multipart image) and `/analyze` (JSON)
+   routes match the frontend 1:1, so the proxy forwards bodies unchanged — no envelope
+   reshaping. (If you instead deploy YOLO as a Model API, `/detect`'s binary upload would
+   need base64 + an adapter; the sidecar App avoids that.)
 
-3. **`/api/detect` image upload** doesn't fit the Model API JSON envelope (hence the
-   "sidecar App" recommendation in Phase 4).
+3. **Wind-*correction* Model API (`model_api.py`, Phase 3)** is registered for completeness /
+   governance, but the current frontend doesn't consume it. Wire a caller into the flight-sim
+   loop if you want live in-flight corrections (it expects the `{"data": {...}}` envelope).
 
-I can write the adapter layer (proxy body-reshaping + flow-field serving) to close these — ask
-when you're ready.
+**Remaining setup action:** make sure the `flow_fields/*.json` are present where the App can
+read them (commit them into the web package, or set `FLOW_FIELDS_DIR` to a Dataset mount).
 
 ---
 
