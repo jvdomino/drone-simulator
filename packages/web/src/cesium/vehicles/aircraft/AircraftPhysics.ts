@@ -62,7 +62,12 @@ export class AircraftPhysics {
     this.verticalVelocity = 0;
   }
 
-  public update(deltaTime: number, input: AircraftInput, windForce?: { headwind: number; lateral: number; vertical: number }): AircraftUpdateResult {
+  public update(
+    deltaTime: number,
+    input: AircraftInput,
+    windForce?: { headwind: number; lateral: number; vertical: number },
+    mlCorrection?: { headingRate: number; throttleRate: number },
+  ): AircraftUpdateResult {
     if (input.targetSpeed !== undefined) {
       this.targetSpeed = Math.max(this.config.minSpeed, Math.min(this.config.maxSpeed, input.targetSpeed));
     } else {
@@ -113,6 +118,16 @@ export class AircraftPhysics {
       this.currentSpeed -= windForce.headwind * deltaTime;
       this.heading += windForce.lateral * deltaTime;
       this.verticalVelocity += windForce.vertical * deltaTime;
+    }
+
+    // Apply ML wind-correction model output (counteracts wind disturbance)
+    if (mlCorrection) {
+      this.currentSpeed = Cesium.Math.clamp(
+        this.currentSpeed + mlCorrection.throttleRate * deltaTime,
+        this.config.minSpeed,
+        this.config.maxSpeed,
+      );
+      this.heading = Cesium.Math.zeroToTwoPi(this.heading + mlCorrection.headingRate * deltaTime);
     }
 
     const targetPitch = Cesium.Math.toRadians(30) * climbInput;

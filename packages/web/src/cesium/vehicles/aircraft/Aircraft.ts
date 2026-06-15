@@ -3,6 +3,7 @@ import { Vehicle, VehicleConfig } from '../Vehicle';
 import { AircraftPhysics, AircraftInput } from './AircraftPhysics';
 import { AutoPilot, type AutoPilotCallback } from './AutoPilot';
 import { WindSystem } from '../../physics/WindSystem';
+import { WindCorrectionClient } from '../../physics/WindCorrectionClient';
 
 interface AircraftConfig extends VehicleConfig {
 }
@@ -12,6 +13,7 @@ export class Aircraft extends Vehicle {
   public autopilot: AutoPilot = new AutoPilot();
   public windSystem: WindSystem = new WindSystem();
   private mlCorrectionEnabled: boolean = false;
+  private mlClient: WindCorrectionClient = new WindCorrectionClient('x47b');
   private input: AircraftInput = {
     throttle: false,
     brake: false,
@@ -76,7 +78,8 @@ export class Aircraft extends Vehicle {
     // Compute wind forces for this frame
     const windForce = this.windSystem.computeForce(this.hpRoll.heading, this.speed, deltaTime);
 
-    const result = this.physics.update(deltaTime, activeInput, windForce);
+    const mlCorrection = this.mlCorrectionEnabled ? this.mlClient.getRates() : undefined;
+    const result = this.physics.update(deltaTime, activeInput, windForce, mlCorrection);
 
     this.hpRoll.heading = result.heading;
     this.hpRoll.pitch = result.pitch;
@@ -202,6 +205,14 @@ export class Aircraft extends Vehicle {
 
   public setMLCorrection(enabled: boolean): void {
     this.mlCorrectionEnabled = enabled;
+    if (enabled) {
+      this.mlClient.start(() => ({
+        aircraft: this.physics.getState(),
+        wind: this.windSystem.getWind(),
+      }));
+    } else {
+      this.mlClient.stop();
+    }
   }
 
   public isMLCorrectionEnabled(): boolean {

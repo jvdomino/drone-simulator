@@ -1,7 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useGameBridge } from '../../../hooks/useGameBridge';
+import { useGameMode } from '../../../hooks/useGameMode';
 
 export function StatusBar() {
   const [elapsed, setElapsed] = useState(0);
+  const bridge = useGameBridge();
+  const { mode } = useGameMode();
+  const [mlOn, setMlOn] = useState(false);
+
+  const toggleMl = useCallback(() => {
+    const next = !mlOn;
+    setMlOn(next);
+    bridge.setMLCorrection(next);
+  }, [bridge, mlOn]);
 
   useEffect(() => {
     const start = Date.now();
@@ -51,6 +62,18 @@ export function StatusBar() {
             <span className="text-[10px] text-mil-dim">LINK</span>
             <div className="w-1.5 h-1.5 rounded-full bg-mil-green" />
           </div>
+          {mode === 'play' && (
+            <button
+              onClick={toggleMl}
+              title={mlOn ? 'Disable ML wind correction' : 'Enable ML wind correction'}
+              className="flex items-center gap-1.5 cursor-pointer group"
+            >
+              <span className={`text-[10px] font-mono transition-colors ${mlOn ? 'text-mil-cyan' : 'text-mil-dim'}`}>
+                ML CORR
+              </span>
+              <div className={`w-1.5 h-1.5 rounded-full transition-colors ${mlOn ? 'bg-mil-cyan animate-blink' : 'bg-mil-dim'}`} />
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -65,6 +65,13 @@ export default defineConfig({
                 ...withAuth(YOLO_TARGET),
                 rewrite: (path) => path.replace(/^\/api\/analyze/, '/analyze'),
             },
+            // Wind correction — proxied to ML_API_URL (Domino Model API or local
+            // model_server.py:5051). Set VITE_MODEL_API_FORMAT=domino when pointing
+            // at a Domino Model API so WindCorrectionClient wraps the envelope.
+            '/api/wind-correct': {
+                ...withAuth(ML_TARGET),
+                rewrite: (path) => path.replace(/^\/api\/wind-correct/, '/wind-correct'),
+            },
             // Wind-tunnel is served by flowFieldServer() above when flow fields are
             // bundled; this proxy is the dev fallback to model_server.py on :5051.
             '/api/wind-tunnel': {
