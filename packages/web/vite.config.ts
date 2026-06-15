@@ -53,7 +53,7 @@ export default defineConfig({
         host: '0.0.0.0',
         port: PORT,
         strictPort: true,
-        allowedHosts: 'all',
+        allowedHosts: true,
         proxy: {
             // YOLO detection + GPT intel report. Point YOLO_API_URL at the YOLO
             // sidecar App (FastAPI), whose /detect and /analyze routes match these
