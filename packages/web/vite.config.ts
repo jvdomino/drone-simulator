@@ -2,6 +2,7 @@ import path from 'path'
 import { defineConfig } from 'vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import react from '@vitejs/plugin-react'
+import { flowFieldServer } from './vite-plugins/flowFieldServer'
 
 const cesiumSource = 'node_modules/cesium/Build/Cesium'
 const cesiumBaseUrl = 'cesium'
@@ -30,6 +31,9 @@ const withAuth = (target: string) => ({
 export default defineConfig({
     plugins: [
         react(),
+        // Serves /api/wind-tunnel from pre-computed CFD JSON (falls through to
+        // the proxy below when no local flow fields are bundled).
+        flowFieldServer(),
         viteStaticCopy({
             targets: [
                 { src: `${cesiumSource}/Workers`, dest: cesiumBaseUrl },
@@ -50,6 +54,9 @@ export default defineConfig({
         port: PORT,
         strictPort: true,
         proxy: {
+            // YOLO detection + GPT intel report. Point YOLO_API_URL at the YOLO
+            // sidecar App (FastAPI), whose /detect and /analyze routes match these
+            // 1:1 — no request reshaping needed (multipart image passes through).
             '/api/detect': {
                 ...withAuth(YOLO_TARGET),
                 rewrite: (path) => path.replace(/^\/api\/detect/, '/detect'),
@@ -58,10 +65,8 @@ export default defineConfig({
                 ...withAuth(YOLO_TARGET),
                 rewrite: (path) => path.replace(/^\/api\/analyze/, '/analyze'),
             },
-            '/api/wind-correct': {
-                ...withAuth(ML_TARGET),
-                rewrite: (path) => path.replace(/^\/api\/wind-correct/, '/wind-correct'),
-            },
+            // Wind-tunnel is served by flowFieldServer() above when flow fields are
+            // bundled; this proxy is the dev fallback to model_server.py on :5051.
             '/api/wind-tunnel': {
                 ...withAuth(ML_TARGET),
                 rewrite: (path) => path.replace(/^\/api\/wind-tunnel/, '/wind-tunnel'),
