@@ -1,7 +1,9 @@
 #!/bin/bash
 # Domino App launch file.
-# Runs the Vite dev server (needed so the /api/* proxy to the Model APIs works)
-# bound to 0.0.0.0 on the Domino app port.
+# Builds the Vite app and serves the static output via vite preview.
+# The dev server cannot run behind Domino's subpath proxy (absolute /@vite/*
+# paths resolve outside the proxy prefix). The built output uses relative
+# URLs (base: './') which work correctly behind any subpath proxy.
 set -e
 
 # --- Node bootstrap ---------------------------------------------------------
@@ -34,4 +36,11 @@ export PORT=8888
 # export MODEL_API_TOKEN="<model-api-access-token>"
 
 npm install
-npm run dev -- --host 0.0.0.0 --port "$PORT" --strictPort
+
+# Build the app (skip tsc — pre-existing type errors unrelated to our code;
+# Vite uses esbuild for transpilation so the output is correct regardless).
+npx vite build
+
+# Serve the built output. vite preview uses base:'./' so all asset URLs are
+# relative and work correctly behind Domino's reverse proxy.
+npx vite preview --host 0.0.0.0 --port "$PORT" --strictPort

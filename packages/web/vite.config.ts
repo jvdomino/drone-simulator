@@ -49,6 +49,12 @@ export default defineConfig({
     // CRITICAL for the Domino reverse proxy: emit relative asset URLs.
     base: './',
     envDir: path.resolve(__dirname, '../..'),
+    preview: {
+        host: '0.0.0.0',
+        port: PORT,
+        strictPort: true,
+        allowedHosts: true,
+    },
     server: {
         host: '0.0.0.0',
         port: PORT,
