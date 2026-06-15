@@ -72,9 +72,9 @@ export function BottomRightPanel({ onDetections }: BottomRightPanelProps) {
 
       {activeTab === 'map' && <MiniMap />}
 
-      {/* ISR panel always active so it keeps scanning, hidden when not selected */}
+      {/* ISR panel only active when the ISR tab is selected */}
       <div className={`fixed bottom-[72px] right-8 z-50 ${activeTab !== 'below' ? 'hidden' : ''}`}>
-        <DetectionPanel isActive={true} onDetections={onDetections} />
+        <DetectionPanel isActive={activeTab === 'below'} onDetections={onDetections} />
       </div>
 
       {activeTab === 'track' && (
