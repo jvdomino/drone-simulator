@@ -68,8 +68,16 @@ async function initializeGame() {
         return { game, gameBridge };
     }
 
-    // Normal flow — cinematic zoom to location
-    await game.startCinematicSequence();
+    // Normal flow — cinematic zoom to location.
+    // Wrap in a timeout so a failed/hung cinematic never locks the screen.
+    await Promise.race([
+        game.startCinematicSequence(),
+        new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error('Cinematic sequence timed out')), 15000)
+        ),
+    ]).catch((err) => {
+        console.warn('Cinematic sequence failed, launching anyway:', err);
+    });
 
     // Hide loading overlay - game is ready
     setLoadingOverlay(false);
