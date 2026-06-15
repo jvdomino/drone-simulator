@@ -13,7 +13,7 @@ from fastapi import FastAPI, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from ultralytics import YOLO
-from openai import OpenAI
+import anthropic
 
 app = FastAPI(title="YOLO Detection Service")
 
@@ -142,32 +142,19 @@ Provide a concise operational intelligence report in JSON format:
 Reference the mission location ({location}) in your assessment. Be specific about what was observed and its significance given the location. If vehicles or ships are detected, note potential military significance. If nothing was detected, note the area appears clear. Respond ONLY with valid JSON."""
 
     try:
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not api_key:
-            # Try loading from .env file at project root
-            env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
-            if os.path.exists(env_path):
-                with open(env_path) as f:
-                    for line in f:
-                        if line.startswith("OPENAI_API_KEY="):
-                            api_key = line.strip().split("=", 1)[1]
-                            break
-
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
             max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
         )
-        content = response.choices[0].message.content.strip()
-        # Parse JSON from response
+        content = response.content[0].text.strip()
         if content.startswith("```"):
             content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         result = json.loads(content)
         return result
     except Exception as e:
-        print(f"OpenAI analysis error: {e}")
+        print(f"Anthropic analysis error: {e}")
         return {
             "summary": f"Automated analysis: {len(waypoints)} waypoints surveyed. Manual review recommended.",
             "threat_level": "low",
