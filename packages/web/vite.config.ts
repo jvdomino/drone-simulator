@@ -6,7 +6,16 @@ import react from '@vitejs/plugin-react'
 const cesiumSource = 'node_modules/cesium/Build/Cesium'
 const cesiumBaseUrl = 'cesium'
 
+const apiProxy = {
+    '/api/detect': { target: 'http://localhost:5050', changeOrigin: true, rewrite: (p: string) => p.replace(/^\/api\/detect/, '/detect') },
+    '/api/analyze': { target: 'http://localhost:5050', changeOrigin: true, rewrite: (p: string) => p.replace(/^\/api\/analyze/, '/analyze') },
+    '/api/wind-correct': { target: 'http://localhost:5051', changeOrigin: true, rewrite: (p: string) => p.replace(/^\/api\/wind-correct/, '/wind-correct') },
+    '/api/wind-tunnel': { target: 'http://localhost:5051', changeOrigin: true, rewrite: (p: string) => p.replace(/^\/api\/wind-tunnel/, '/wind-tunnel') },
+}
+
 export default defineConfig({
+    base: './',
+    preview: { host: '0.0.0.0', port: 8888, strictPort: true, allowedHosts: true, proxy: apiProxy },
     plugins: [
         react(),
         viteStaticCopy({
