@@ -1,5 +1,10 @@
 #!/bin/bash
 set -e
+# Backends (the frontend proxies /api/* to these)
+cd /mnt/code/packages/python-yolo && python main.py > /tmp/yolo.log 2>&1 &
+cd /mnt/code/packages/ml && python model_server.py > /tmp/ml.log 2>&1 &
+
+# Frontend
 cd /mnt/code/packages/web
 npm install --no-audit --no-fund
 npx vite build
